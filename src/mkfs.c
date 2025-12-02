@@ -24,25 +24,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    uint32_t super_block_blocks = 1;
-
-    uint32_t ibmp_bytes = (TOTAL_INODES + 7) / 8;
-    // eqauls 1
-    uint32_t ibmp_blocks = (ibmp_bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
-    uint32_t bbmp_bytes = (TOTAL_BLOCKS + 7) / 8;
-    // equals 1
-    uint32_t bbmp_blocks = (bbmp_bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
-    uint32_t itable_bytes = TOTAL_INODES * INODE_SIZE;
-    // equals 400
-    uint32_t itable_blocks = (itable_bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
     uint32_t super_block_start = 1;
-    uint32_t ibmp_start = super_block_start + super_block_blocks;
-    uint32_t bbmp_start = ibmp_start + ibmp_blocks;
-    uint32_t itable_start = bbmp_start + bbmp_blocks;
-    uint32_t data_start = itable_start + itable_blocks;
+    uint32_t ibmp_start = super_block_start + SUPER_BLOCK_BLOCKS;
+    uint32_t bbmp_start = ibmp_start + IBMP_BLOCKS;
+    uint32_t itable_start = bbmp_start + BBMP_BLOCKS;
+    uint32_t data_start = itable_start + ITABLE_BLOCKS;
 
     struct SuperBlock *sb = calloc(1, sizeof(struct SuperBlock));
     if (!sb)
@@ -63,7 +49,7 @@ int main(int argc, char *argv[])
     sb->free_blocks = TOTAL_BLOCKS - data_start;
 
     // Initialize inode bitmap to zero
-    uint8_t *ibmp = calloc(1, ibmp_blocks * BLOCK_SIZE);
+    uint8_t *ibmp = calloc(1, IBMP_BLOCKS * BLOCK_SIZE);
     if (!ibmp)
     {
         printf("Memory allocation failed for inode bitmap.\n");
@@ -72,7 +58,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     // Initialize block bitmap to zero
-    uint8_t *bbmp = calloc(1, bbmp_blocks * BLOCK_SIZE);
+    uint8_t *bbmp = calloc(1, BBMP_BLOCKS * BLOCK_SIZE);
     if (!bbmp)
     {
         printf("Memory allocation failed for block bitmap.\n");

@@ -10,6 +10,11 @@
 #define TOTAL_INODES 12800
 #define MAX_FILENAME_LENGTH 28
 
+#define SUPER_BLOCK_BLOCKS 1
+#define IBMP_BLOCKS ((TOTAL_INODES + 7) / 8 + BLOCK_SIZE - 1) / BLOCK_SIZE        // equals 1
+#define BBMP_BLOCKS ((TOTAL_BLOCKS + 7) / 8 + BLOCK_SIZE - 1) / BLOCK_SIZE        // equals 1
+#define ITABLE_BLOCKS ((TOTAL_INODES * INODE_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE) // equals 400
+
 /* fs partition layout
  * +-----------------+
  * |   boot block    |    empty
@@ -61,9 +66,9 @@ struct Inode
     uint32_t ctime;                      /* creation time */
     uint32_t mtime;                      /* last modification time */
     uint32_t atime;                      /* last access time */
-    uint32_t direct_blocks[DIRECT_PTRS]; /* direct data block pointers */
-    uint32_t indirect_block;             /* single indirect block pointer */
-    uint32_t double_indirect_block;      /* double indirect block pointer */
+    uint32_t direct_blocks[DIRECT_PTRS]; /* direct data block pointers, locate 4KB */
+    uint32_t indirect_block;             /* single indirect block pointer, locate 4MB */
+    uint32_t double_indirect_block;      /* double indirect block pointer, locate 4TB */
     uint8_t reserved[INODE_SIZE - 88];   /* padding to fill the inode */
 };
 

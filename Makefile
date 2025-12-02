@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -std=c99 -Iinclude
-TARGET = mkfs
+CFLAGS = -Wall -Wextra -std=c99 -Iinclude
+TARGET = mkfs shell
 
 SRCS = $(wildcard src/*.c)
 OBJS = $(patsubst src/%.c, %.o, $(SRCS))
@@ -9,9 +9,13 @@ OBJS = $(patsubst src/%.c, %.o, $(SRCS))
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@
+mkfs: mkfs.o disk.o bitmap.o
+	$(CC) $(CFLAGS) $^ -o $@
 
+shell: shell.o fs_api.o disk.o bitmap.o
+	$(CC) $(CFLAGS) $^ -o $@
+
+# $^: all dependencies
 # $<: dependency
 # $@: target
 %.o: src/%.c
@@ -19,3 +23,6 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(OBJS)
+
+cleana: clean
+	rm -f $(TARGET) simfs.img
