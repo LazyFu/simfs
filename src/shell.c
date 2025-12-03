@@ -305,6 +305,15 @@ void execute_command(char **args)
     {
         result = fs_lsof();
     }
+    else if (strcmp(cmd, "find") == 0)
+    {
+        if (args[1] == NULL)
+        {
+            printf("Usage: find <filename>\n");
+            return;
+        }
+        result = fs_find(args[1]);
+    }
     else if (strcmp(cmd, "help") == 0)
     {
         print_shell_help();
@@ -335,6 +344,7 @@ void print_shell_help()
     printf("  rm <file_path>             - Remove a file\n");
     printf("  cd <directory>             - Change current directory\n");
     printf("  ls [path]                  - List files in current or specified directory\n");
+    printf("  find <filename>            - Find by name from current directory and print paths\n");
     printf("  lsof                       - List open files\n");
     printf("  help                       - Show this help message\n");
     printf("  exit                       - Exit the shell\n");
