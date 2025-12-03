@@ -35,3 +35,4 @@ int fs_rm(const char *path);
 int fs_cd(const char *path, char *output_path);
 int fs_ls(const char *path);
 int fs_lsof();
+int fs_find(const char *name);

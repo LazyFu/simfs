@@ -27,6 +27,7 @@ static struct FileConcurrency *g_file_concurrency = NULL;
 
 static uint32_t g_cwd_inode = 1; // root inode
 
+static void do_find_recursive(uint32_t dir_inode_id, const char *name);
 static int find_free_fd();
 static int add_dir_entry(uint32_t parent_inode_id, const char *name, uint32_t inode_id);
 static int create_inode_entry(uint32_t parent_inode_id, const char *name, uint16_t mode, uint32_t *new_inode_id);
@@ -433,6 +434,16 @@ int fs_seek(int fd, uint32_t offset)
     return 0;
 }
 
+int fs_find(const char *name)
+{
+    if (name == NULL || name[0] == '\0')
+    {
+        return -1;
+    }
+    do_find_recursive(g_cwd_inode, name);
+    return 0;
+}
+
 int fs_create(const char *path, uint16_t mode)
 {
     char *filename = calloc(1, MAX_FILENAME_LENGTH);
@@ -685,6 +696,79 @@ int fs_lsof()
         }
     }
     return 0;
+}
+
+// Helper function for fs_find
+static void do_find_recursive(uint32_t dir_inode_id, const char *name)
+{
+    struct Inode *dir_inode = &g_inode_table[dir_inode_id];
+    uint32_t size = dir_inode->size;
+    uint32_t total_logical_blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    uint8_t block_buf[BLOCK_SIZE];
+
+    for (uint32_t i = 0; i < total_logical_blocks; i++)
+    {
+        uint32_t physical_block_id = inode_get_or_create_block(dir_inode, i, false);
+        if (physical_block_id == 0)
+        {
+            continue;
+        }
+        if (read_block(physical_block_id, block_buf) != 0)
+        {
+            continue;
+        }
+
+        uint32_t bytes_scanned = i * BLOCK_SIZE;
+        uint32_t bytes_left = size - bytes_scanned;
+        uint32_t scan_size = (bytes_left < BLOCK_SIZE) ? bytes_left : BLOCK_SIZE;
+
+        for (uint32_t offset = 0; offset < scan_size; offset += sizeof(struct DirEntry))
+        {
+            struct DirEntry *entry = (struct DirEntry *)(block_buf + offset);
+            if (entry->inode == 0)
+            {
+                continue;
+            }
+            if (strcmp(entry->filename, ".") == 0 || strcmp(entry->filename, "..") == 0)
+            {
+                continue;
+            }
+
+            if (strcmp(entry->filename, name) == 0)
+            {
+                char path_buf[512];
+                struct Inode *entry_inode = &g_inode_table[entry->inode];
+                if (entry_inode->mode & FS_FT_DIR)
+                {
+                    if (build_path_from_inode(entry->inode, path_buf, sizeof(path_buf)) == 0)
+                    {
+                        printf("%s/\n", path_buf);
+                    }
+                }
+                else
+                {
+                    char parent_path[512];
+                    if (build_path_from_inode(dir_inode_id, parent_path, sizeof(parent_path)) == 0)
+                    {
+                        size_t len = strlen(parent_path);
+                        if (len == 1 && parent_path[0] == '/')
+                        {
+                            printf("/");
+                        }
+                        else
+                        {
+                            printf("%s/", parent_path);
+                        }
+                        printf("%s\n", entry->filename);
+                    }
+                }
+            }
+            if (g_inode_table[entry->inode].mode & FS_FT_DIR)
+            {
+                do_find_recursive(entry->inode, name);
+            }
+        }
+    }
 }
 
 // Find a free file descriptor
