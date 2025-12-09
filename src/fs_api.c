@@ -691,7 +691,24 @@ int fs_lsof()
                 free(filename);
                 return -1;
             }
-            printf("FD: %d, Filename: %s, Mode: 0x%X\n", fd, filename, fh->mode);
+            printf("FD: %d, Filename: %s, ", fd, filename);
+            if(fh->mode & FS_O_READ)
+            {
+                printf("Mode: READ");
+            }
+            else if(fh->mode & FS_O_WRITE)
+            {
+                printf("Mode: WRITE");
+            }
+            else if(fh->mode & FS_O_RW)
+            {
+                printf("Mode: READ/WRITE");
+            }
+            else if(fh->mode & FS_O_APPEND)
+            {
+                printf("Mode: APPEND");
+            }
+            printf(", Offset: %u\n", fh->offset);
             free(filename);
         }
     }
